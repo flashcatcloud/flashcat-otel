@@ -1,0 +1,10 @@
+go 1.25.0
+
+
+
+use (
+	.
+	./mod1
+	//.proj1 // comment out proj1 to test if it affects otel version
+	./proj2
+)

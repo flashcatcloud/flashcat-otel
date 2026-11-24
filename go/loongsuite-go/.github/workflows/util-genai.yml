@@ -1,0 +1,58 @@
+# This workflow builds and tests the util-genai module and its integration tests.
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: UtilGenAI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'util-genai/**'
+      - '.github/workflows/util-genai.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'util-genai/**'
+      - '.github/workflows/util-genai.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # go.sum and vendor/ are git-ignored repo-wide, so resolve modules from the
+    # network at build time instead of expecting a checked-in go.sum/vendor.
+    env:
+      GOFLAGS: -mod=mod
+    strategy:
+      matrix:
+        # Go 1.24 is kept deliberately: modules declare `go 1.25.0` (required by
+        # OTel >= 1.42), so a 1.24 runner exercises the GOTOOLCHAIN=auto upgrade
+        # path that users on 1.24 rely on. Go 1.26 is held back until
+        # bytedance/sonic >= v1.15.0 is picked up - v1.14.1 gates GoMapIterator
+        # behind !go1.26, which breaks the eino and hertz builds.
+        # See https://github.com/bytedance/sonic/issues/895
+        go_version:
+          - 1.24
+          - 1.25
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go_version }}
+
+    - name: Build (library)
+      working-directory: util-genai
+      run: go build ./...
+
+    - name: Vet (library)
+      working-directory: util-genai
+      run: go vet ./...
+
+    - name: Unit tests (library)
+      working-directory: util-genai
+      run: go test -race -v -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - name: Integration tests
+      working-directory: util-genai/integration
+      run: go test -race -v ./...

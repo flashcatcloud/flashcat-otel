@@ -1,0 +1,16 @@
+name: Bug report
+description: Create a report to help us improve
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: What the bug is and Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Debug Log
+      description: .otel-build/debug.log is required
+    validations:
+      required: true
